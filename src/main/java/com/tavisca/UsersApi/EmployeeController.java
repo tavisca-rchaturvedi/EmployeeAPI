@@ -3,10 +3,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.web.bind.annotation.*;
 
+import javax.persistence.EntityManager;
 import java.sql.Timestamp;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 
 @RestController
@@ -17,6 +19,9 @@ public class EmployeeController {
 
     @Autowired
     PasswordRepository passwordRepository;
+
+    @Autowired
+    EntityManager entityManager;
 
 
 
@@ -59,7 +64,7 @@ public class EmployeeController {
         Optional<Employee> oldData = employeeRepository.findById(employee.id);
 
         if(oldData.isPresent()){
-            if(oldData.get().createdBy != employee.createdBy || oldData.get().role != employee.role){
+            if(!oldData.get().role.equals("admin") && (oldData.get().createdBy != employee.createdBy || oldData.get().role != employee.role)){
                 return "You do not have previleges to change Created By or Role Field";
             }
             else{
@@ -103,5 +108,20 @@ public class EmployeeController {
     public String passwordMaking(@RequestBody Password password){
         passwordRepository.save(password);
         return "Successfully updated password";
+    }
+
+    @PutMapping("/employee")
+    public List<Employee> whereClause(@RequestParam String column, @RequestParam String value){
+        
+        if(column.toLowerCase().equals("firstname"))
+            return employeeRepository.findByFirstName(value);
+        else if(column.toLowerCase().equals("lastname"))
+            return employeeRepository.findByLastName(value);
+        else if(column.toLowerCase().equals("createdby"))
+            return employeeRepository.findByCreatedy(value);
+        else if(column.toLowerCase().equals("role"))
+            return employeeRepository.findByRole(value);
+        else
+            return null;
     }
 }
